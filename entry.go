@@ -214,7 +214,7 @@ func (entry Entry) HasCaller() (has bool) {
 
 // This function is not declared with a pointer value because otherwise
 // race conditions will occur when using multiple goroutines
-func (entry Entry) log(level Level, msg string) {
+func (entry Entry) log(level Level, args ...interface{}) {
 	var buffer *bytes.Buffer
 
 	// Default to now, but allow users to override if they want.
@@ -227,7 +227,7 @@ func (entry Entry) log(level Level, msg string) {
 	}
 
 	entry.Level = level
-	entry.Message = msg
+	entry.Message = fmt.Sprint(args...)
 	entry.Logger.mu.Lock()
 	if entry.Logger.ReportCaller {
 		entry.Caller = getCaller()
@@ -252,7 +252,7 @@ func (entry Entry) log(level Level, msg string) {
 	// panic() to use in Entry#Panic(), we avoid the allocation by checking
 	// directly here.
 	if level <= PanicLevel {
-		panic(&entry)
+		panic(args)
 	}
 }
 
@@ -280,7 +280,7 @@ func (entry *Entry) write() {
 
 func (entry *Entry) Log(level Level, args ...interface{}) {
 	if entry.Logger.IsLevelEnabled(level) {
-		entry.log(level, fmt.Sprint(args...))
+		entry.log(level, args...)
 	}
 }
 
@@ -319,7 +319,7 @@ func (entry *Entry) Fatal(args ...interface{}) {
 
 func (entry *Entry) Panic(args ...interface{}) {
 	entry.Log(PanicLevel, args...)
-	panic(fmt.Sprint(args...))
+	panic(args)
 }
 
 // Entry Printf family functions
